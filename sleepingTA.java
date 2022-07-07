@@ -80,36 +80,34 @@ public static boolean isWaiting(int student_id){
         }
                 if(students_waiting > 0){
                     ta_sleeping_flag = 0;
-                    int help_time = rand.nextInt(50000) + 10000;
-
+                    int help_time = rand.nextInt(30000) + 10000;
                     System.out.println("TA is helping student "+  waiting_room_size[next_teach_spot]+ " for " + help_time/1000 + "s.");
-                    System.out.println("Students waiting: " + students_waiting + ".");
                     //remove student from waiting area
+                    int currentID = waiting_room_size[next_teach_spot];
                     waiting_room_size[next_teach_spot] = 0;
                     students_waiting--;
                     next_teach_spot = (next_teach_spot + 1) % WAITING_SIZE;
+                    System.out.println("Students waiting: " + students_waiting + ".");
+                     for (Student student : students) {
+                            synchronized(student){
+                        if(currentID != student.student_id){
+                            student.notify();
+                            }
+                            }
+                        }
                     try{
                         Thread.sleep(help_time);
                     }
                     catch(InterruptedException e){
                         System.out.println("TA interrupted.");
                         return;
-                    }
-                    //add student to waiting area
-                    synchronized(students){
-                        for (Student student : students) {
-                            synchronized(student){
-                            student.notify();
-                            }
-                        }
-                    }
+                    }                    
                 }
         }
     }
   }
   private class Student extends Thread{
     int student_id;
-
     public Student(int id){
         this.student_id = id;
     }
@@ -125,7 +123,20 @@ public static boolean isWaiting(int student_id){
                 }
             }
         }
-            int time = rand.nextInt(80000) + 30000;
+        synchronized(this){
+            while(students_waiting >= WAITING_SIZE){
+                System.out.println("No seats available. Student " + student_id + " will try later.");
+            try{
+                
+                this.wait();
+            }
+            catch(InterruptedException e){
+                System.out.println("Student interrupted.");
+                return;
+            }
+        }
+        }
+            int time = rand.nextInt(50000) + 20000 ;
             System.out.println("Student " + student_id + " is programming for " + time/1000 + "s.");
             try{
                 Thread.sleep(time);
@@ -133,21 +144,7 @@ public static boolean isWaiting(int student_id){
             catch(InterruptedException e){
                 System.out.println("Student interrupted.");
                 return;
-            }
-          
-                synchronized(this){
-                    while(students_waiting > WAITING_SIZE){
-                    try{
-                        
-                        System.out.println("No seats available. Student " + student_id + " will try later.");
-                        this.wait();
-                    }
-                    catch(InterruptedException e){
-                        System.out.println("Student interrupted.");
-                        return;
-                    }
-                }
-                }
+            }     
             if(students_waiting < WAITING_SIZE){
                 waiting_room_size[next_seat_spot] = student_id;
                 students_waiting++;
