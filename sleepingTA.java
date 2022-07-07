@@ -31,13 +31,13 @@ public void runner(String[] args) {
     TA ta = new TA();
     ta.start();
         for (i = 0; i < student_num; i++) {
-            student_ids[i] = i;
-            students[i] = new Student(i);
+            student_ids[i] = i + 1;
+            students[i] = new Student(i + 1);
             students[i].start();
         }
         try{ta.join();}catch(InterruptedException e){}
-        for (i = 0; i < students.length; i++) {
-            try{students[i].join();}catch(InterruptedException e){}
+        for (Student student : students) {
+            try{student.join();}catch(InterruptedException e){}
         }
         
     
@@ -80,7 +80,7 @@ public static boolean isWaiting(int student_id){
         }
                 if(students_waiting > 0){
                     ta_sleeping_flag = 0;
-                    int help_time = rand.nextInt(30000) + 10000;
+                    int help_time = rand.nextInt(20000) + 5000;
                     System.out.println("TA is helping student "+  waiting_room_size[next_teach_spot]+ " for " + help_time/1000 + "s.");
                     //remove student from waiting area
                     int currentID = waiting_room_size[next_teach_spot];
@@ -136,7 +136,7 @@ public static boolean isWaiting(int student_id){
             }
         }
         }
-            int time = rand.nextInt(50000) + 20000 ;
+            int time = rand.nextInt(30000) + 15000 ;
             System.out.println("Student " + student_id + " is programming for " + time/1000 + "s.");
             try{
                 Thread.sleep(time);
