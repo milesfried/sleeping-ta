@@ -1,4 +1,6 @@
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 public class sleepingTA{
 private final static int DEFAULT_NUM_STUDENTS = 7;
 private final static int WAITING_SIZE = 3;
@@ -8,6 +10,7 @@ int students_waiting = 0;
 int next_seat_spot = 0;
 int next_teach_spot = 0;
 int ta_sleeping_flag = 0;
+Timer timer = new Timer();
 Random rand = new Random();
 
 public void runner(String[] args) {
@@ -35,11 +38,8 @@ public void runner(String[] args) {
             students[i] = new Student(i + 1);
             students[i].start();
         }
-        try{ta.join();}catch(InterruptedException e){}
-        for (Student student : students) {
-            try{student.join();}catch(InterruptedException e){}
-        }
-        
+        TimeOutTask timeOutTask = new TimeOutTask(ta, timer);
+        timer.schedule(timeOutTask, 150000);
     
 }
 
@@ -73,7 +73,9 @@ public static boolean isWaiting(int student_id){
                     waiting_room_size.wait();
                 }
                 catch(InterruptedException e){
-                    System.out.println("TA interrupted.");
+                    for (Student student : students) {
+                        student.interrupt();
+                    }
                     return;
                 }
             }
@@ -99,7 +101,9 @@ public static boolean isWaiting(int student_id){
                         Thread.sleep(help_time);
                     }
                     catch(InterruptedException e){
-                        System.out.println("TA interrupted.");
+                        for (Student student : students) {
+                            student.interrupt();
+                        }
                         return;
                     }                    
                 }
@@ -118,7 +122,7 @@ public static boolean isWaiting(int student_id){
                 try{
                     this.wait();
                 }catch(InterruptedException e){
-                    System.out.println("Student interrupted.");
+                    System.out.println("Student " + student_id + " has gone home.");
                     return;
                 }
             }
@@ -131,7 +135,7 @@ public static boolean isWaiting(int student_id){
                 this.wait();
             }
             catch(InterruptedException e){
-                System.out.println("Student interrupted.");
+                System.out.println("Student " + student_id + " has gone home.");
                 return;
             }
         }
@@ -142,7 +146,7 @@ public static boolean isWaiting(int student_id){
                 Thread.sleep(time);
             }
             catch(InterruptedException e){
-                System.out.println("Student interrupted.");
+                System.out.println("Student " + student_id + " has gone home.");
                 return;
             }     
             if(students_waiting < WAITING_SIZE){
@@ -157,6 +161,21 @@ public static boolean isWaiting(int student_id){
             }
         }
 
+    }
+  }
+ private class TimeOutTask extends TimerTask{
+    private TA thread;
+    private Timer timer;
+    public TimeOutTask(TA thread, Timer timer){
+        this.thread = thread;
+        this.timer = timer;
+    }
+    public void run(){
+        if(thread != null && thread.isAlive()){
+            thread.interrupt();
+            timer.cancel();
+            System.out.println("Office Hours are over. \nTA has gone home.");
+        }
     }
   }
 }
